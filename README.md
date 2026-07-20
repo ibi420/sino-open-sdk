@@ -60,4 +60,4 @@ suggestions to further harden the Sino ecosystem.
 ---
 
 _For more information on the Sino project, visit
-[Sino Privacy](https://sino-privacy.com)._
+[Sino Privacy](https://sinosecure.app/privacy)._
