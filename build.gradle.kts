@@ -11,14 +11,21 @@ repositories {
 }
 
 dependencies {
-    implementation("com.lambdapioneer.argon2kt:argon2kt:1.6.0")
+    implementation("org.bouncycastle:bcprov-jdk18on:1.78.1")
     
     testImplementation(kotlin("test"))
     testImplementation("junit:junit:4.13.2")
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
 kotlin {
-    jvmToolchain(17)
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
 }
 
 tasks.test {

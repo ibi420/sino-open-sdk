@@ -22,16 +22,16 @@ application to ensure that:
 3. Cloud providers are treated as "dumb storage," remaining completely blind to
    your filenames, structures, and content.
 
-## 📂 Included Components
+## 📂 Included Components & Specifications
 
-- **`crypto/AESEncryptionEngine.kt`**: Implementation of AES-256-GCM, including
-  our specialized **Chunked GCM** logic for secure, zero-latency media
-  streaming.
-- **`crypto/SinoKeyDerivation.kt`**: Our implementation of **Argon2id** for
-  high-entropy key derivation from user passwords.
-- **`cloud/CloudClient.kt`**: The interface defining our "Blind Cloud" protocol.
-- **`models/MetadataModel.kt`**: The specification for Sino's encrypted metadata
-  blobs.
+- **[`SPECIFICATION.md`](SPECIFICATION.md)**: Formal open specification for Sino's 4-tier key hierarchy, path salting, and 1MB chunked GCM streaming.
+- **`crypto/AESEncryptionEngine.kt`**: Implementation of AES-256-GCM, including our specialized **Chunked GCM** logic for secure, zero-latency media streaming.
+- **`crypto/SinoKeyDerivation.kt`**: Implementation of **Argon2id** (64MB RAM, 3 iterations, 4 parallelism threads) for high-entropy key derivation.
+- **`crypto/CloudPathHasher.kt`**: HMAC-SHA256 path anonymizer ensuring complete "Cloud Blindness" (zero filename/folder structure leak to providers).
+- **`crypto/DuressKeyDerivation.kt`**: Domain-separated key derivation specification for dual-vault decoy key isolation.
+- **`cli/SinoDecryptorCLI.kt`**: Standalone desktop CLI recovery runner (runs on Linux/macOS/Windows independently of the mobile app).
+- **`cloud/CloudClient.kt`**: Interface defining our "Blind Cloud" protocol.
+- **`models/MetadataModel.kt`**: Specification for Sino's encrypted metadata blobs.
 
 ## 🤖 AI-Augmented Security Auditing
 
