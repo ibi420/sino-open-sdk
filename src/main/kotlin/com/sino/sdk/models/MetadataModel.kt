@@ -20,5 +20,8 @@ data class SinoMetadata(
     // Performance Flags
     val isCompressed: Boolean,
     val isChunked: Boolean, // Supports 1MB GCM chunked random access
-    val isDuress: Boolean // Forensic isolation flag
+    val isDuress: Boolean, // Forensic isolation flag
+    
+    // Multi-Cloud Hub
+    val providerHints: List<String> = emptyList()
 )

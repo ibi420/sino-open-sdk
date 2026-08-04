@@ -12,7 +12,7 @@ import java.util.Base64
  * Linux/macOS/Windows desktop environment independently of the mobile application.
  *
  * Usage:
- *   java -cp sino-open-sdk.jar com.sino.sdk.cli.SinoDecryptorCLI <input_encrypted_file> <output_file> <base64_dek> <base64_iv>
+ *   java -cp sino-open-sdk.jar com.sino.sdk.cli.SinoDecryptorCLI <input_encrypted_file> <output_file> <base64_dek> <base64_iv> [is_chunked]
  */
 object SinoDecryptorCLI {
 
@@ -22,7 +22,7 @@ object SinoDecryptorCLI {
 
         if (args.size < 4) {
             println("Error: Insufficient arguments.")
-            println("Usage: java -cp sino-open-sdk.jar com.sino.sdk.cli.SinoDecryptorCLI <input_file> <output_file> <base64_dek> <base64_iv>")
+            println("Usage: java -cp sino-open-sdk.jar com.sino.sdk.cli.SinoDecryptorCLI <input_file> <output_file> <base64_dek> <base64_iv> [is_chunked]")
             return
         }
 
@@ -30,6 +30,7 @@ object SinoDecryptorCLI {
         val outputFilePath = args[1]
         val base64Dek = args[2]
         val base64Iv = args[3]
+        val isChunked = args.getOrNull(4)?.toBoolean() ?: true // Default to true as per Phase 9+
 
         val inputFile = File(inputFilePath)
         val outputFile = File(outputFilePath)
@@ -45,10 +46,14 @@ object SinoDecryptorCLI {
 
             val engine = AESEncryptionEngine()
 
-            println("Decrypting [${inputFile.name}] -> [${outputFile.name}]...")
+            println("Decrypting [${inputFile.name}] -> [${outputFile.name}] (Chunked: $isChunked)...")
             FileInputStream(inputFile).use { inStream ->
                 FileOutputStream(outputFile).use { outStream ->
-                    engine.decrypt(inStream, outStream, dek, iv)
+                    if (isChunked) {
+                        engine.decryptChunked(inStream, outStream, dek, iv, 1024 * 1024)
+                    } else {
+                        engine.decrypt(inStream, outStream, dek, iv)
+                    }
                 }
             }
 

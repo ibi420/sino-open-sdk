@@ -19,7 +19,7 @@ This SDK includes the actual cryptographic engines used by the Sino application
 to ensure that:
 
 1. All encryption happens locally on your device before network transmission.
-2. Only you—not Sino, not cloud providers, and not any third party—hold the keys
+2. Only you not Sino, not cloud providers, and not any third party hold the keys
    to your data.
 3. Cloud providers are treated as "dumb storage," remaining completely blind to
    your filenames, structures, and content.

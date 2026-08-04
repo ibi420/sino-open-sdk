@@ -50,6 +50,12 @@ Cloud providers see only opaque 64-character hexadecimal keys and encrypted payl
 2. Directory structure & nesting hierarchy.
 3. Original file size (due to compression & 1MB chunk alignment).
 
+### 3.1 Resilient Path Discovery (Self-Healing)
+To ensure long-term data accessibility through protocol evolutions, Sino implements a multi-stage discovery process:
+1. **Modern Standard**: The engine first attempts to locate data using the HMAC-SHA256 pathing standard.
+2. **Legacy Fallback**: If no data is found, the engine performs a secondary check using the legacy SHA-256 standard ($\text{SHA-256}(\text{NormalizedPath} + \text{Salt}_{\text{path}})$).
+3. **Auto-Healing**: Upon successful legacy discovery, the engine automatically re-calculates the modern path and mirrors the data to the spec-compliant location, ensuring transparent migration for the user.
+
 ---
 
 ## 4. Dual-Vault Duress Isolation Specification
@@ -72,3 +78,24 @@ try {
     SecurityUtils.fillZero(dekBuffer)
 }
 ```
+
+---
+
+## 6. Metadata Specification
+
+Sino utilizes a structured JSON format for file metadata, which is itself encrypted using the user's RMK. This metadata is the "Source of Truth" for the vault.
+
+### 6.1 Data Fields
+- `originalName`: The original filename (including extension).
+- `relativePath`: The logical directory structure (e.g., `Documents/Private`).
+- `mimeType`: Technical file classification.
+- `size`: Original file size in bytes.
+- `checksum`: SHA-256 fingerprint of the original plaintext.
+- `cloudChecksum`: SHA-256 fingerprint of the final optimized/transcoded blob.
+- `timestamp`: Creation time in milliseconds.
+- `encryptedDEK`: The file's unique 256-bit AES key, wrapped by the RMK.
+- `iv`: The base 96-bit Initialization Vector.
+- `isCompressed`: Gzip optimization flag.
+- `isChunked`: Sino-GCM 1MB chunked format flag.
+- `isDuress`: Forensic isolation flag.
+- `providerHints`: A list of RAID targets (e.g., `["MEGA", "GOOGLE_DRIVE", "S3:100"]`) confirming where the file is mirrored.

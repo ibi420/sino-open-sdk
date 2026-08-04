@@ -9,17 +9,17 @@ import java.io.File
 interface CloudClient {
     suspend fun login(email: String, password: String): Result<Unit>
     suspend fun resumeSession(email: String? = null): Result<Unit>
-    suspend fun uploadFile(localFile: File, remotePath: String): Result<String>
-    suspend fun startChunkedUpload(remotePath: String, totalSize: Long): Result<String>
-    suspend fun uploadChunk(sessionId: String, chunkData: ByteArray, offset: Long): Result<Unit>
-    suspend fun finishChunkedUpload(sessionId: String): Result<String>
-    suspend fun downloadFile(remoteFileId: String, localDestination: File, onProgress: ((Long, Long) -> Unit)? = null): Result<Unit>
-    suspend fun downloadRange(remoteFileId: String, startByte: Long, length: Long): Result<ByteArray>
-    suspend fun createFolder(path: String): Result<String>
-    suspend fun listFiles(remotePath: String): Result<List<RemoteFile>>
-    suspend fun moveToTrash(remoteFileId: String): Result<Unit>
-    suspend fun restoreFromTrash(remoteFileId: String): Result<Unit>
-    suspend fun deletePermanently(remoteFileId: String): Result<Unit>
+    suspend fun uploadFile(localFile: File, remotePath: String, vaultOverride: String? = null): Result<String>
+    suspend fun startChunkedUpload(remotePath: String, totalSize: Long, vaultOverride: String? = null): Result<String>
+    suspend fun uploadChunk(sessionId: String, chunkData: ByteArray, offset: Long, partNumber: Int, remotePath: String, vaultOverride: String? = null): Result<String>
+    suspend fun finishChunkedUpload(sessionId: String, remotePath: String, etags: Map<Int, String>? = null, vaultOverride: String? = null): Result<String>
+    suspend fun downloadFile(remoteFileId: String, localDestination: File, onProgress: ((Long, Long) -> Unit)? = null, vaultOverride: String? = null): Result<Unit>
+    suspend fun downloadRange(remoteFileId: String, startByte: Long, length: Long, vaultOverride: String? = null): Result<ByteArray>
+    suspend fun createFolder(path: String, vaultOverride: String? = null): Result<String>
+    suspend fun listFiles(remotePath: String, vaultOverride: String? = null): Result<List<RemoteFile>>
+    suspend fun moveToTrash(remoteFileId: String, vaultOverride: String? = null): Result<Unit>
+    suspend fun restoreFromTrash(remoteFileId: String, vaultOverride: String? = null): Result<Unit>
+    suspend fun deletePermanently(remoteFileId: String, vaultOverride: String? = null): Result<Unit>
     suspend fun logout(): Result<Unit>
     fun lock()
     fun clearRAM()
