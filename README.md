@@ -77,7 +77,9 @@ java -cp build/libs/sino-open-sdk-1.0.0.jar com.sino.sdk.cli.SinoDecryptorCLI en
 
 ### 3. Programmatic Integration Examples (Kotlin / Java)
 
-#### A. AES-256-GCM Stream Encryption & Decryption
+#### A. AES-256-GCM Stream Encryption & Decryption (Chunked)
+
+Sino uses a 1MB chunked format to enable random-access streaming.
 
 ```kotlin
 import com.sino.sdk.crypto.AESEncryptionEngine
@@ -87,11 +89,11 @@ val engine = AESEncryptionEngine()
 val dek = ByteArray(32).also { SecureRandom().nextBytes(it) }
 val iv = ByteArray(12).also { SecureRandom().nextBytes(it) }
 
-// Encrypt payload stream
-engine.encrypt(inputStream, outputStream, dek, iv)
+// Encrypt payload stream into 1MB chunks
+engine.encryptChunked(inputStream, outputStream, dek, iv, 1024 * 1024)
 
-// Decrypt payload stream
-engine.decrypt(encryptedInputStream, decryptedOutputStream, dek, iv)
+// Decrypt specific range (e.g., for streaming)
+engine.decryptRange(encryptedInputStream, outputStream, dek, iv, startByte, length, totalSize, 1024 * 1024)
 ```
 
 #### B. Argon2id Key Derivation
