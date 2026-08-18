@@ -1,4 +1,4 @@
-# Sino Open Security SDK
+# Sino Privacy Vault Open Security SDK
 
 Welcome to the official security core of **Sino**.
 
