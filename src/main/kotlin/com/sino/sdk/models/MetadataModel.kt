@@ -16,6 +16,7 @@ data class SinoMetadata(
     // Cryptographic Binding
     val encryptedDEK: String, // The file key, wrapped by the Root Master Key (RMK)
     val iv: String, // The base Initialization Vector
+    val encryptionVersion: Int = 1,
     
     // Performance Flags
     val isCompressed: Boolean,

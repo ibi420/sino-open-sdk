@@ -10,12 +10,14 @@ import javax.crypto.spec.SecretKeySpec
 /**
  * Core engine for AES-256-GCM encryption and decryption.
  * Verifiable implementation of Sino's Zero-Knowledge encryption.
+ * Hardened v2: Implements versioned nonce derivation and self-seeking logic.
  */
 class AESEncryptionEngine : EncryptionEngine {
 
     companion object {
         private const val ALGORITHM = "AES/GCM/NoPadding"
         private const val TAG_LENGTH_BITS = 128
+        private const val TAG_SIZE_BYTES = 16
         private const val IV_LENGTH_BYTES = 12
         private const val KEY_SIZE_BYTES = 32 // 256 bits
     }
@@ -79,24 +81,32 @@ class AESEncryptionEngine : EncryptionEngine {
         outputStream: OutputStream,
         key: ByteArray,
         iv: ByteArray,
-        chunkSize: Int
+        chunkSize: Int,
+        version: Int
     ) {
         val secretKey = SecretKeySpec(key, "AES")
         val buffer = ByteArray(chunkSize)
         var chunkIndex = 0L
 
         try {
-            var read = inputStream.read(buffer)
-            while (read != -1) {
-                val currentIv = incrementIV(iv, chunkIndex)
+            while (true) {
+                var totalRead = 0
+                while (totalRead < chunkSize) {
+                    val r = inputStream.read(buffer, totalRead, chunkSize - totalRead)
+                    if (r == -1) break
+                    totalRead += r
+                }
+
+                if (totalRead == 0) break
+
+                val currentIv = incrementIV(iv, chunkIndex, version)
                 val cipher = Cipher.getInstance(ALGORITHM)
                 cipher.init(Cipher.ENCRYPT_MODE, secretKey, GCMParameterSpec(TAG_LENGTH_BITS, currentIv))
                 
-                val encrypted = cipher.doFinal(buffer, 0, read)
+                val encrypted = cipher.doFinal(buffer, 0, totalRead)
                 outputStream.write(encrypted)
                 
                 chunkIndex++
-                read = inputStream.read(buffer)
             }
         } finally {
             SecurityUtils.fillZero(buffer)
@@ -108,25 +118,33 @@ class AESEncryptionEngine : EncryptionEngine {
         outputStream: OutputStream,
         key: ByteArray,
         iv: ByteArray,
-        chunkSize: Int
+        chunkSize: Int,
+        version: Int
     ) {
         val secretKey = SecretKeySpec(key, "AES")
-        val encryptedChunkSize = chunkSize + (TAG_LENGTH_BITS / 8)
+        val encryptedChunkSize = chunkSize + TAG_SIZE_BYTES
         val buffer = ByteArray(encryptedChunkSize)
         var chunkIndex = 0L
 
         try {
-            var read = inputStream.read(buffer)
-            while (read != -1) {
-                val currentIv = incrementIV(iv, chunkIndex)
+            while (true) {
+                var totalRead = 0
+                while (totalRead < encryptedChunkSize) {
+                    val r = inputStream.read(buffer, totalRead, encryptedChunkSize - totalRead)
+                    if (r == -1) break
+                    totalRead += r
+                }
+
+                if (totalRead == 0) break
+
+                val currentIv = incrementIV(iv, chunkIndex, version)
                 val cipher = Cipher.getInstance(ALGORITHM)
                 cipher.init(Cipher.DECRYPT_MODE, secretKey, GCMParameterSpec(TAG_LENGTH_BITS, currentIv))
                 
-                val decrypted = cipher.doFinal(buffer, 0, read)
+                val decrypted = cipher.doFinal(buffer, 0, totalRead)
                 outputStream.write(decrypted)
                 
                 chunkIndex++
-                read = inputStream.read(buffer)
             }
         } finally {
             SecurityUtils.fillZero(buffer)
@@ -141,44 +159,77 @@ class AESEncryptionEngine : EncryptionEngine {
         startByte: Long,
         length: Long,
         totalSize: Long,
-        chunkSize: Int
+        chunkSize: Int,
+        version: Int,
+        streamOffset: Long
     ) {
         val secretKey = SecretKeySpec(key, "AES")
-        val tagSize = TAG_LENGTH_BITS / 8
-        val encryptedChunkSize = chunkSize + tagSize
+        val encryptedChunkSize = chunkSize + TAG_SIZE_BYTES
         
-        var currentPos = startByte
-        val endByte = startByte + length
+        var currentPlaintextPos = startByte
+        val endPlaintextPos = startByte + length
+        var currentStreamPos = streamOffset
         
-        while (currentPos < endByte) {
-            val chunkIndex = currentPos / chunkSize
-            val currentIv = incrementIV(iv, chunkIndex)
+        while (currentPlaintextPos < endPlaintextPos) {
+            val chunkIndex = currentPlaintextPos / chunkSize
+            val requiredStreamPos = chunkIndex * encryptedChunkSize.toLong()
+
+            // ELITE: Self-Seeking Logic
+            if (currentStreamPos < requiredStreamPos) {
+                val toSkip = requiredStreamPos - currentStreamPos
+                var skipped = 0L
+                while (skipped < toSkip) {
+                    val res = inputStream.skip(toSkip - skipped)
+                    if (res <= 0) break
+                    skipped += res
+                }
+                currentStreamPos = requiredStreamPos
+            }
+
+            val currentIv = incrementIV(iv, chunkIndex, version)
             val cipher = Cipher.getInstance(ALGORITHM)
             cipher.init(Cipher.DECRYPT_MODE, secretKey, GCMParameterSpec(TAG_LENGTH_BITS, currentIv))
             
+            // ELITE: Hardened Full-Read for GCM packets
             val buffer = ByteArray(encryptedChunkSize)
-            val read = inputStream.read(buffer)
-            if (read == -1) break
+            var totalRead = 0
+            while (totalRead < encryptedChunkSize) {
+                val r = inputStream.read(buffer, totalRead, encryptedChunkSize - totalRead)
+                if (r == -1) break
+                totalRead += r
+            }
+            currentStreamPos += totalRead
+
+            if (totalRead < TAG_SIZE_BYTES) break
             
-            val decrypted = cipher.doFinal(buffer, 0, read)
-            val offsetInChunk = (currentPos % chunkSize).toInt()
-            val bytesToTake = kotlin.math.min(decrypted.size - offsetInChunk, (endByte - currentPos).toInt())
+            val decrypted = cipher.doFinal(buffer, 0, totalRead)
+            val offsetInChunk = (currentPlaintextPos % chunkSize).toInt()
+            val bytesToTake = kotlin.math.min(decrypted.size - offsetInChunk, (endPlaintextPos - currentPlaintextPos).toInt())
             
             outputStream.write(decrypted, offsetInChunk, bytesToTake)
             
-            currentPos += bytesToTake
+            currentPlaintextPos += bytesToTake
             SecurityUtils.fillZero(decrypted)
             SecurityUtils.fillZero(buffer)
         }
     }
 
-    private fun incrementIV(baseIv: ByteArray, counter: Long): ByteArray {
+    private fun incrementIV(baseIv: ByteArray, counter: Long, version: Int): ByteArray {
+        if (counter > 0xFFFFFFFFL) throw IllegalArgumentException("Nonce Overflow")
+        
         val iv = baseIv.copyOf()
-        val c = counter.toInt()
-        iv[8] = (iv[8].toInt() xor (c ushr 24 and 0xFF)).toByte()
-        iv[9] = (iv[9].toInt() xor (c ushr 16 and 0xFF)).toByte()
-        iv[10] = (iv[10].toInt() xor (c ushr 8 and 0xFF)).toByte()
-        iv[11] = (iv[11].toInt() xor (c and 0xFF)).toByte()
+        if (version == 1) {
+            val c = counter.toInt()
+            iv[8] = (iv[8].toInt() xor (c ushr 24 and 0xFF)).toByte()
+            iv[9] = (iv[9].toInt() xor (c ushr 16 and 0xFF)).toByte()
+            iv[10] = (iv[10].toInt() xor (c ushr 8 and 0xFF)).toByte()
+            iv[11] = (iv[11].toInt() xor (c and 0xFF)).toByte()
+        } else {
+            iv[8] = (counter ushr 24 and 0xFFL).toByte()
+            iv[9] = (counter ushr 16 and 0xFFL).toByte()
+            iv[10] = (counter ushr 8 and 0xFFL).toByte()
+            iv[11] = (counter and 0xFFL).toByte()
+        }
         return iv
     }
 

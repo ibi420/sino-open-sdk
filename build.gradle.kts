@@ -1,9 +1,9 @@
 plugins {
-    kotlin("jvm") version "1.9.23"
+    kotlin("jvm") version "2.4.10"
 }
 
 group = "com.sino"
-version = "1.0.0"
+version = "2.1.0"
 
 repositories {
     mavenCentral()
@@ -11,7 +11,8 @@ repositories {
 }
 
 dependencies {
-    implementation("org.bouncycastle:bcprov-jdk18on:1.78.1")
+    implementation("org.bouncycastle:bcprov-jdk18on:1.85.2")
+    implementation("com.squareup.okio:okio:3.18.1")
     
     testImplementation(kotlin("test"))
     testImplementation("junit:junit:4.13.2")
