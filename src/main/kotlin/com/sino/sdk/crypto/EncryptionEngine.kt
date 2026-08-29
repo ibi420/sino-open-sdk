@@ -13,9 +13,20 @@ interface EncryptionEngine {
     fun decrypt(inputStream: InputStream, outputStream: OutputStream, key: ByteArray, iv: ByteArray)
 
     // ELITE: Chunked GCM for Direct Cloud Streaming
-    fun encryptChunked(inputStream: InputStream, outputStream: OutputStream, key: ByteArray, iv: ByteArray, chunkSize: Int = 1024 * 1024)
-    fun decryptChunked(inputStream: InputStream, outputStream: OutputStream, key: ByteArray, iv: ByteArray, chunkSize: Int = 1024 * 1024)
+    fun encryptChunked(inputStream: InputStream, outputStream: OutputStream, key: ByteArray, iv: ByteArray, chunkSize: Int = 1024 * 1024, version: Int = 1)
+    fun decryptChunked(inputStream: InputStream, outputStream: OutputStream, key: ByteArray, iv: ByteArray, chunkSize: Int = 1024 * 1024, version: Int = 1)
 
     // ELITE: Partial Decryption (Random Access)
-    fun decryptRange(inputStream: InputStream, outputStream: OutputStream, key: ByteArray, iv: ByteArray, startByte: Long, length: Long, totalSize: Long, chunkSize: Int = 1024 * 1024)
+    fun decryptRange(
+        inputStream: InputStream,
+        outputStream: OutputStream,
+        key: ByteArray,
+        iv: ByteArray,
+        startByte: Long,
+        length: Long,
+        totalSize: Long,
+        chunkSize: Int = 1024 * 1024,
+        version: Int = 1,
+        streamOffset: Long = 0
+    )
 }
