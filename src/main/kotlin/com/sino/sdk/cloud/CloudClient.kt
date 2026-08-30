@@ -6,7 +6,7 @@ package com.sino.sdk.cloud
  * Hardened v3: Aligned with production RAID protocol for full lifecycle management.
  */
 interface CloudClient {
-    suspend fun login(email: String, password: String, mfaCode: String? = null): Result<Unit>
+    suspend fun login(email: String, password: CharArray, mfaCode: CharArray? = null): Result<Unit>
     suspend fun resumeSession(email: String? = null): Result<Unit>
     
     fun setSessionExpiredListener(listener: () -> Unit)

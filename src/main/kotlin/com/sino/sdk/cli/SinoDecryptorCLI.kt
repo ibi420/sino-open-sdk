@@ -1,6 +1,7 @@
 package com.sino.sdk.cli
 
 import com.sino.sdk.crypto.AESEncryptionEngine
+import com.sino.sdk.crypto.SecurityUtils
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -42,8 +43,14 @@ object SinoDecryptorCLI {
         }
 
         try {
-            val dek = Base64.getDecoder().decode(base64Dek)
-            val iv = Base64.getDecoder().decode(base64Iv)
+            val dekChars = base64Dek.toCharArray()
+            val ivChars = base64Iv.toCharArray()
+            
+            val dek = SecurityUtils.fromBase64(dekChars)
+            val iv = SecurityUtils.fromBase64(ivChars)
+            
+            SecurityUtils.fillZero(dekChars)
+            SecurityUtils.fillZero(ivChars)
 
             val engine = AESEncryptionEngine()
 
@@ -58,7 +65,11 @@ object SinoDecryptorCLI {
                 }
             }
 
+            SecurityUtils.fillZero(dek)
+            SecurityUtils.fillZero(iv)
+
             println("SUCCESS: File decrypted cleanly (${outputFile.length()} bytes). Integrity verified.")
+            SecurityUtils.requestSystemGc()
         } catch (e: Exception) {
             println("DECRYPTION FAILED: ${e.message}")
             e.printStackTrace()

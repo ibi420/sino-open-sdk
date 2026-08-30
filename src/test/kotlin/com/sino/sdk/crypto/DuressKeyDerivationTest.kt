@@ -11,7 +11,7 @@ class DuressKeyDerivationTest {
 
     @Test
     fun `primary key and decoy key derived from same password MUST be cryptographically distinct`() {
-        val password = "UserSecretPassphrase123!"
+        val password = "UserSecretPassphrase123!".toCharArray()
         val userSalt = "UserSpecificSaltValue99".toByteArray()
 
         val primaryKey = duressDerivation.deriveVaultKey(password, userSalt, isDuress = false)

@@ -18,8 +18,8 @@ class SinoKeyDerivation {
         private const val HASH_LENGTH = 32 // 256 bits for AES-256
     }
 
-    fun deriveKey(password: String, salt: ByteArray): ByteArray {
-        val passwordBytes = password.toByteArray(Charsets.UTF_8)
+    fun deriveKey(password: CharArray, salt: ByteArray): ByteArray {
+        val passwordBytes = SecurityUtils.toUtf8(password)
         try {
             val builder = Argon2Parameters.Builder(Argon2Parameters.ARGON2_id)
                 .withVersion(Argon2Parameters.ARGON2_VERSION_13)
