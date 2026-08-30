@@ -14,21 +14,21 @@ class DuressKeyDerivation {
     private val keyDerivation = SinoKeyDerivation()
 
     companion object {
-        private const val PRIMARY_SALT_PREFIX = "SinoPrimaryMasterKeySaltV1"
-        private const val DURESS_SALT_PREFIX = "SinoDuressDecoyKeySaltV1"
+        private val PRIMARY_SALT_PREFIX = "SinoPrimaryMasterKeySaltV1".toByteArray(Charsets.UTF_8)
+        private val DURESS_SALT_PREFIX = "SinoDuressDecoyKeySaltV1".toByteArray(Charsets.UTF_8)
     }
 
     /**
      * Derives a vault key using domain separation.
      *
-     * @param password User input PIN or password
+     * @param password User input PIN or password (as CharArray for memory hygiene)
      * @param userSpecificSalt Per-user salt
      * @param isDuress True for Decoy Vault, false for Primary Vault
      * @return 256-bit derived key
      */
-    fun deriveVaultKey(password: String, userSpecificSalt: ByteArray, isDuress: Boolean): ByteArray {
+    fun deriveVaultKey(password: CharArray, userSpecificSalt: ByteArray, isDuress: Boolean): ByteArray {
         val prefix = if (isDuress) DURESS_SALT_PREFIX else PRIMARY_SALT_PREFIX
-        val combinedSalt = computeCombinedSalt(prefix.toByteArray(Charsets.UTF_8), userSpecificSalt)
+        val combinedSalt = computeCombinedSalt(prefix, userSpecificSalt)
 
         try {
             return keyDerivation.deriveKey(password, combinedSalt)

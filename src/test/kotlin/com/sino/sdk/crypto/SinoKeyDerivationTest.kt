@@ -10,7 +10,7 @@ class SinoKeyDerivationTest {
 
     @Test
     fun `deriveKey should produce 32-byte key deterministically`() {
-        val password = "MasterPassword2026"
+        val password = "MasterPassword2026".toCharArray()
         val salt = "FixedSaltValueForTesting".toByteArray()
 
         val key1 = derivation.deriveKey(password, salt)

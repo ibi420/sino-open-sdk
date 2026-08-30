@@ -13,7 +13,7 @@ class AESEncryptionEngineTest {
     @Test
     fun `test basic encryption and decryption`() {
         val originalText = "Sino Zero-Trust Security Verification"
-        val password = "StrongMasterPassword123"
+        val password = "StrongMasterPassword123".toCharArray()
         val salt = engine.generateIV() // Using IV generator for random salt
         
         // Use KEK derivation
